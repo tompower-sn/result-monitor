@@ -5,46 +5,31 @@ import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
-import se.tp21.*
+import se.tp21.FailureMonitor
+import se.tp21.Result
 import se.tp21.Result.Failure
 import se.tp21.Result.Success
-import se.tp21.resultmonitor.ResultMonitorTest.TestError.AnError
-import se.tp21.resultmonitor.ResultMonitorTest.TestEvent.ErrorEvent
-import se.tp21.resultmonitor.ResultMonitorTest.TestEvent.StartEvent
+import se.tp21.resultmonitor.TestError.AnError
+import se.tp21.resultmonitor.TestEvent.ErrorEvent
+import se.tp21.resultmonitor.TestEvent.StartEvent
 
-class ResultMonitorTest {
-
-    sealed class TestError(override val message: String) : Error {
-        class AnError : TestError("error")
-    }
-
-    sealed class TestEvent(override val message: String) : Event {
-        class StartEvent : TestEvent("start")
-        class ErrorEvent : TestEvent("error")
-    }
+class FailureMonitorTest {
 
     private fun TestError.toEvent(): TestEvent =
         when (this) {
-            is AnError -> ErrorEvent()
+            is AnError -> ErrorEvent(message)
         }
-
-    class TestMonitor : Monitor<TestEvent> {
-        val events: MutableList<TestEvent> = mutableListOf()
-        override fun notify(event: TestEvent) {
-            events.add(event)
-        }
-    }
 
     class Monitored(
-        private val resultMonitor: ResultMonitor<TestError, TestEvent>
+        private val failureMonitor: FailureMonitor<TestError, TestEvent>
     ) {
         fun result(result: Result<TestError, String>): Result<TestError, String> =
-            resultMonitor {
+            failureMonitor {
                 result
             }
 
         fun resultWithMonitorCall(result: Result<TestError, String>): Result<TestError, String> =
-            resultMonitor {
+            failureMonitor {
                 monitor.notify(StartEvent())
                 result
             }
@@ -56,11 +41,11 @@ class ResultMonitorTest {
     @Before
     fun setUp() {
         monitor = TestMonitor()
-        monitored = Monitored(ResultMonitor(monitor) { toEvent() })
+        monitored = Monitored(FailureMonitor(monitor) { toEvent() })
     }
 
     @Test
-    fun `failure notifies monitor`() {
+    fun `notifies monitor on failure`() {
         assertThat(monitor.events.size, equalTo(0))
         monitored.result(Failure(AnError()))
         assertThat(monitor.events.size, equalTo(1))
@@ -68,14 +53,14 @@ class ResultMonitorTest {
     }
 
     @Test
-    fun `success doesn't notify monitor`() {
+    fun `doesn't notify monitor on success`() {
         assertThat(monitor.events.size, equalTo(0))
         monitored.result(Success("woo"))
         assertThat(monitor.events.size, equalTo(0))
     }
 
     @Test
-    fun `calls to monitor work on failure`() {
+    fun `allows direct calls to monitor on failure`() {
         assertThat(monitor.events.size, equalTo(0))
         monitored.resultWithMonitorCall(Failure(AnError()))
         assertThat(monitor.events.size, equalTo(2))
@@ -84,7 +69,7 @@ class ResultMonitorTest {
     }
 
     @Test
-    fun `calls to monitor work on success`() {
+    fun `allows direct calls to monitor on success`() {
         assertThat(monitor.events.size, equalTo(0))
         monitored.resultWithMonitorCall(Success("woo"))
         assertThat(monitor.events.size, equalTo(1))

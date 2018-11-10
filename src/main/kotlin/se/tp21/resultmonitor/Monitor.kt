@@ -1,7 +1,7 @@
 package se.tp21
 
-interface Monitor<T: Event> {
-    fun notify(event: T)
+interface Monitor<Ev: Event> {
+    fun notify(event: Ev)
 }
 
 interface Event {

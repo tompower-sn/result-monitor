@@ -9,7 +9,8 @@ import se.tp21.*
 import se.tp21.Result.Failure
 import se.tp21.Result.Success
 import se.tp21.resultmonitor.ResultMonitorTest.TestError.AnError
-import se.tp21.resultmonitor.ResultMonitorTest.TestEvent.AnEvent
+import se.tp21.resultmonitor.ResultMonitorTest.TestEvent.ErrorEvent
+import se.tp21.resultmonitor.ResultMonitorTest.TestEvent.StartEvent
 
 class ResultMonitorTest {
 
@@ -18,12 +19,13 @@ class ResultMonitorTest {
     }
 
     sealed class TestEvent(override val message: String) : Event {
-        class AnEvent : TestEvent("event")
+        class StartEvent : TestEvent("start")
+        class ErrorEvent : TestEvent("error")
     }
 
     private fun TestError.toEvent(): TestEvent =
         when (this) {
-            is AnError -> AnEvent()
+            is AnError -> ErrorEvent()
         }
 
     class TestMonitor : Monitor<TestEvent> {
@@ -36,13 +38,15 @@ class ResultMonitorTest {
     class Monitored(
         private val resultMonitor: ResultMonitor<TestError, TestEvent>
     ) {
-        fun result(boolean: Boolean): Result<Error, String> =
+        fun result(result: Result<TestError, String>): Result<TestError, String> =
             resultMonitor {
-                if (boolean) {
-                    Success("success")
-                } else {
-                    Failure(AnError())
-                }
+                result
+            }
+
+        fun resultWithMonitorCall(result: Result<TestError, String>): Result<TestError, String> =
+            resultMonitor {
+                monitor.notify(StartEvent())
+                result
             }
     }
 
@@ -52,22 +56,39 @@ class ResultMonitorTest {
     @Before
     fun setUp() {
         monitor = TestMonitor()
-        monitored = Monitored(ResultMonitor(monitor) { error: TestError -> error.toEvent() })
+        monitored = Monitored(ResultMonitor(monitor) { toEvent() })
     }
 
     @Test
     fun `failure notifies monitor`() {
         assertThat(monitor.events.size, equalTo(0))
-        monitored.result(false)
+        monitored.result(Failure(AnError()))
         assertThat(monitor.events.size, equalTo(1))
-        assertThat(monitor.events[0], instanceOf(AnEvent::class.java))
+        assertThat(monitor.events[0], instanceOf(ErrorEvent::class.java))
     }
 
     @Test
     fun `success doesn't notify monitor`() {
         assertThat(monitor.events.size, equalTo(0))
-        monitored.result(true)
+        monitored.result(Success("woo"))
         assertThat(monitor.events.size, equalTo(0))
+    }
+
+    @Test
+    fun `calls to monitor work on failure`() {
+        assertThat(monitor.events.size, equalTo(0))
+        monitored.resultWithMonitorCall(Failure(AnError()))
+        assertThat(monitor.events.size, equalTo(2))
+        assertThat(monitor.events[0], instanceOf(StartEvent::class.java))
+        assertThat(monitor.events[1], instanceOf(ErrorEvent::class.java))
+    }
+
+    @Test
+    fun `calls to monitor work on success`() {
+        assertThat(monitor.events.size, equalTo(0))
+        monitored.resultWithMonitorCall(Success("woo"))
+        assertThat(monitor.events.size, equalTo(1))
+        assertThat(monitor.events[0], instanceOf(StartEvent::class.java))
     }
 
 }

@@ -1,10 +1,10 @@
 package se.tp21
 
-class Monitor<T: MonitoringEvent> {
-    var notifications: Int = 0
+interface Monitor<T: Event> {
+    fun notify(event: T)
+}
 
-    fun notify(event: T) {
-        notifications +=1
-    }
+interface Event {
+    val message: String
 }
 

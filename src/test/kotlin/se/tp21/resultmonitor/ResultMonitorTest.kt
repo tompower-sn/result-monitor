@@ -1,57 +1,73 @@
 package se.tp21.resultmonitor
 
 import org.hamcrest.CoreMatchers.equalTo
+import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
 import se.tp21.*
-import se.tp21.Result.Companion.failure
-import se.tp21.Result.Companion.success
+import se.tp21.Result.Failure
+import se.tp21.Result.Success
+import se.tp21.resultmonitor.ResultMonitorTest.TestError.AnError
+import se.tp21.resultmonitor.ResultMonitorTest.TestEvent.AnEvent
 
 class ResultMonitorTest {
 
-    private val monitor = Monitor<MonitoringEvent>()
-    private val resultMonitor = ResultMonitor<Error, MonitoringEvent, Boolean>(monitor)
+    sealed class TestError(override val message: String) : Error {
+        class AnError : TestError("error")
+    }
 
-    private fun Boolean.monitored(): Result<Error, Boolean> =
-        resultMonitor {
-            if (this) {
-                success(this)
-            } else {
-                failure(Error("failure message"))
-            }
+    sealed class TestEvent(override val message: String) : Event {
+        class AnEvent : TestEvent("event")
+    }
+
+    private fun TestError.toEvent(): TestEvent =
+        when (this) {
+            is AnError -> AnEvent()
         }
+
+    class TestMonitor : Monitor<TestEvent> {
+        val events: MutableList<TestEvent> = mutableListOf()
+        override fun notify(event: TestEvent) {
+            events.add(event)
+        }
+    }
+
+    class Monitored(
+        private val resultMonitor: ResultMonitor<TestError, TestEvent>
+    ) {
+        fun result(boolean: Boolean): Result<Error, String> =
+            resultMonitor {
+                if (boolean) {
+                    Success("success")
+                } else {
+                    Failure(AnError())
+                }
+            }
+    }
+
+    private lateinit var monitor: TestMonitor
+    private lateinit var monitored: Monitored
+
+    @Before
+    fun setUp() {
+        monitor = TestMonitor()
+        monitored = Monitored(ResultMonitor(monitor) { error: TestError -> error.toEvent() })
+    }
 
     @Test
     fun `failure notifies monitor`() {
-        assertThat(monitor.notifications, equalTo(0))
-        false.monitored()
-        assertThat(monitor.notifications, equalTo(1))
+        assertThat(monitor.events.size, equalTo(0))
+        monitored.result(false)
+        assertThat(monitor.events.size, equalTo(1))
+        assertThat(monitor.events[0], instanceOf(AnEvent::class.java))
     }
 
     @Test
     fun `success doesn't notify monitor`() {
-        assertThat(monitor.notifications, equalTo(0))
-        true.monitored()
-        assertThat(monitor.notifications, equalTo(0))
+        assertThat(monitor.events.size, equalTo(0))
+        monitored.result(true)
+        assertThat(monitor.events.size, equalTo(0))
     }
-
-    companion object {
-        @Before
-        fun `setup`() {
-
-        }
-    }
-
-//    inline fun <reified T : Exception> extractFailure(failures: List<T>): List<String?> =
-//        failures.map { failure ->
-//            when (failure) {
-//                is IOException -> failure.stackTrace.toString()
-//                is OutOfMemoryError -> failure.message
-//                else -> {
-//                    failure.toString()
-//                }
-//            }
-//        }
 
 }

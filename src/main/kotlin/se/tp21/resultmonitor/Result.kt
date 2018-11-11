@@ -5,7 +5,5 @@ sealed class Result<out ERR, out T> {
     data class Success<out T>(val value: T) : Result<Nothing, T>()
 }
 
-interface Error{
-    val message: String
-}
+interface Error
 

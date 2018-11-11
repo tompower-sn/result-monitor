@@ -4,7 +4,5 @@ interface Monitor<Ev: Event> {
     fun notify(event: Ev)
 }
 
-interface Event {
-    val message: String
-}
+interface Event
 

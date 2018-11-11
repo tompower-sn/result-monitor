@@ -5,15 +5,16 @@ import org.hamcrest.CoreMatchers.instanceOf
 import org.hamcrest.MatcherAssert.assertThat
 import org.junit.Before
 import org.junit.Test
-import se.tp21.FailureMonitor
+import se.tp21.NotifyFailure
 import se.tp21.Result
 import se.tp21.Result.Failure
 import se.tp21.Result.Success
+import se.tp21.ResultMonitor
 import se.tp21.resultmonitor.TestError.AnError
 import se.tp21.resultmonitor.TestEvent.ErrorEvent
 import se.tp21.resultmonitor.TestEvent.StartEvent
 
-class FailureMonitorTest {
+class NotifyFailureTest {
 
     private fun TestError.toEvent(): TestEvent =
         when (this) {
@@ -21,15 +22,15 @@ class FailureMonitorTest {
         }
 
     class Monitored(
-        private val failureMonitor: FailureMonitor<TestError, TestEvent>
+        private val notifyFailure: NotifyFailure<TestError, TestEvent>
     ) {
         fun result(result: Result<TestError, String>): Result<TestError, String> =
-            failureMonitor {
+            notifyFailure {
                 result
             }
 
         fun resultWithMonitorCall(result: Result<TestError, String>): Result<TestError, String> =
-            failureMonitor {
+            notifyFailure {
                 monitor.notify(StartEvent())
                 result
             }
@@ -41,7 +42,7 @@ class FailureMonitorTest {
     @Before
     fun setUp() {
         monitor = TestMonitor()
-        monitored = Monitored(FailureMonitor(monitor) { toEvent() })
+        monitored = Monitored(ResultMonitor(monitor).notifyFailure { error -> error.toEvent() })
     }
 
     @Test

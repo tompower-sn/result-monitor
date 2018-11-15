@@ -1,9 +1,5 @@
 package se.tp21.resultmonitor
 
-import se.tp21.Error
-import se.tp21.Event
-import se.tp21.Monitor
-
 sealed class TestError : Error
 data class AnError(val message: String = "AnError") : TestError()
 

@@ -1,7 +1,4 @@
-package se.tp21
-
-import se.tp21.Result.Failure
-import se.tp21.Result.Success
+package se.tp21.resultmonitor
 
 fun <Er : Error, Ev: Event> Monitor<Ev>.notifyFailure(failureToEvent: (Failure<Er>) -> Ev) = NotifyFailure(this, failureToEvent)
 

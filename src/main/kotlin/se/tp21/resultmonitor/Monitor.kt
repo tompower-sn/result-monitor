@@ -1,4 +1,4 @@
-package se.tp21
+package se.tp21.resultmonitor
 
 interface Monitor<Ev: Event> {
     fun notify(event: Ev)

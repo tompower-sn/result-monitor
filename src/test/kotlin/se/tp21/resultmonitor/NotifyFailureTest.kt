@@ -11,8 +11,8 @@ import se.tp21.notifyFailure
 
 class NotifyFailureTest {
 
-    private fun TestError.toEvent(): TestEvent =
-        when (this) {
+    private fun Failure<TestError>.toEvent(): TestEvent =
+        when (this.error) {
             is AnError -> ErrorEvent()
         }
 
@@ -22,7 +22,7 @@ class NotifyFailureTest {
     @Before
     fun setUp() {
         monitor = TestMonitor()
-        notifyFailure = monitor.notifyFailure { error -> error.toEvent() }
+        notifyFailure = monitor.notifyFailure { it.toEvent() }
     }
 
     @Test

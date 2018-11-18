@@ -5,6 +5,7 @@ data class AnError(val message: String = "AnError") : TestError()
 
 sealed class TestEvent : Event
 data class StartEvent(val message: String = "StartEvent") : TestEvent()
+data class SuccessEvent(val message: String = "SuccessEvent") : TestEvent()
 data class ErrorEvent(val message: String = "ErrorEvent") : TestEvent()
 
 class TestMonitor : Monitor<TestEvent> {

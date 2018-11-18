@@ -47,7 +47,7 @@ class NotifySuccessTest {
     }
 
     @Test
-    fun `allows direct calls to monitor on faiure`() {
+    fun `allows direct calls to monitor on failure`() {
         assertNoEvents()
         notifySuccess {
             monitor.notify(StartEvent())

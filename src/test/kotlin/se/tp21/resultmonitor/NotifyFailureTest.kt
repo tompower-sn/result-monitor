@@ -8,7 +8,7 @@ import org.junit.Test
 class NotifyFailureTest {
 
     private fun Failure<TestError>.toEvent(): TestEvent? =
-        when (this.error) {
+        when (error) {
             is AnError -> ErrorEvent()
         }
 

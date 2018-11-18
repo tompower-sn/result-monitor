@@ -9,7 +9,7 @@ class NotifyResultTest {
 
     private fun Result<TestError, String>.toEvent(): TestEvent? =
         when (this) {
-            is Failure -> when (this.error) {
+            is Failure -> when (error) {
                 is AnError -> ErrorEvent()
             }
             is Success -> SuccessEvent(value)
@@ -43,7 +43,7 @@ class NotifyResultTest {
     }
 
     @Test
-    fun `allows direct calls to monitor on result`() {
+    fun `allows direct calls to monitor on failure`() {
         assertNoEvents()
         notifyResult {
             monitor.notify(StartEvent())

@@ -10,6 +10,16 @@ fun <T : Any, Er : Error, Ev : Event> Monitor<Ev>.notifyFailure(
         }
     }
 
+fun <T : Any, Er : Error, Ev : Event> Monitor<Ev>.notifySuccess(
+    successEvent: (Success<T>) -> Ev?
+): NotifyResult<T, Er, Ev> =
+    notifyResult {
+        when (it) {
+            is Success -> successEvent(it)
+            is Failure -> null
+        }
+    }
+
 fun <T : Any, Er : Error, Ev : Event> Monitor<Ev>.notifyResult(
     resultEvent: (Result<Er, T>) -> Ev?
 ) = NotifyResult(this, resultEvent)

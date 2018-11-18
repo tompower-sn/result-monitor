@@ -6,3 +6,5 @@ interface Monitor<Ev: Event> {
 
 interface Event
 
+class DefaultEvent : Event
+

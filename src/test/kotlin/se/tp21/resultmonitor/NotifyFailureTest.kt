@@ -7,13 +7,13 @@ import org.junit.Test
 
 class NotifyFailureTest {
 
-    private fun Failure<TestError>.toEvent(): TestEvent =
+    private fun Failure<TestError>.toEvent(): TestEvent? =
         when (this.error) {
             is AnError -> ErrorEvent()
         }
 
     private lateinit var monitor: TestMonitor
-    private lateinit var notifyFailure: NotifyFailure<TestError, TestEvent>
+    private lateinit var notifyFailure: NotifyResult<String, TestError, TestEvent>
 
     @Before
     fun setUp() {

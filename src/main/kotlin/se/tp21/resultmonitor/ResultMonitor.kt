@@ -1,16 +1,27 @@
 package se.tp21.resultmonitor
 
-fun <Er : Error, Ev: Event> Monitor<Ev>.notifyFailure(failureToEvent: (Failure<Er>) -> Ev) = NotifyFailure(this, failureToEvent)
+fun <T : Any, Er : Error, Ev : Event> Monitor<Ev>.notifyFailure(
+    failureEvent: (Failure<Er>) -> Ev?
+): NotifyResult<T, Er, Ev> =
+    notifyResult {
+        when (it) {
+            is Success -> null
+            is Failure -> failureEvent(it)
+        }
+    }
 
-class NotifyFailure<Er : Error, Ev: Event>(
+fun <T : Any, Er : Error, Ev : Event> Monitor<Ev>.notifyResult(
+    resultEvent: (Result<Er, T>) -> Ev?
+) = NotifyResult(this, resultEvent)
+
+class NotifyResult<T : Any, Er : Error, Ev : Event>(
     val monitor: Monitor<Ev>,
-    private val failureToEvent: (Failure<Er>) -> Ev
+    private val resultEvent: (Result<Er, T>) -> Ev?
 ) {
-    operator fun <T> invoke(block: NotifyFailure<Er, Ev>.() -> Result<Er, T>): Result<Er, T> =
-        block().let { result ->
-            when (result) {
-                is Failure -> result.also { monitor.notify(failureToEvent(it)) }
-                is Success -> result
-            }
+    operator fun invoke(
+        block: NotifyResult<T, Er, Ev>.() -> Result<Er, T>
+    ): Result<Er, T> =
+        block().also {
+            resultEvent(it)?.let { monitor.notify(it) }
         }
 }
